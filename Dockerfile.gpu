@@ -2,37 +2,42 @@ FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
 
 RUN apt-get update
 
-# Supress warnings about missing front-end. As recommended at:
-# http://stackoverflow.com/questions/22466255/is-it-possibe-to-answer-dialog-questions-when-installing-under-docker
-ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get install -y --no-install-recommends apt-utils
 
-# Developer Essentials
-RUN apt-get install -y --no-install-recommends git curl vim unzip openssh-client wget zsh libnccl2=2.0.5-3+cuda9.0 libnccl-dev=2.0.5-3+cuda9.0 libjpeg-dev
+RUN apt-get install -y --no-install-recommends \
+    apt-utils \
+    cmake \
+    git \
+    curl \
+    libopenblas-dev \
+    libcupti-dev \
+    libnccl2=2.0.5-3+cuda9.0 \
+    libnccl-dev=2.0.5-3+cuda9.0 \
+    libjpeg-dev \
+    zlib1g-dev \
+    openssh-client \
+    vim \
+    wget \
+    zsh \
 
-# Build tools
-RUN apt-get install -y --no-install-recommends build-essential cmake
 
-# OpenBLAS
-RUN apt-get install -y --no-install-recommends libopenblas-dev
 
-# Python 3.5
-RUN apt-get install -y --no-install-recommends python3.5 python3.5-dev python3-pip
-RUN pip3 install --no-cache-dir --upgrade pip setuptools
-RUN echo "alias python='python3'" >> /root/.bash_aliases
-RUN echo "alias pip='pip3'" >> /root/.bash_aliases
-# Pillow and it's dependencies
-RUN apt-get install -y --no-install-recommends libjpeg-dev zlib1g-dev
-RUN pip3 --no-cache-dir install Pillow
+ENV PYTHON_VERSION=3.6
+RUN curl -o ~/miniconda.sh -O  https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh  && \
+     chmod +x ~/miniconda.sh && \
+     ~/miniconda.sh -b -p /opt/conda && \     
+rm ~/miniconda.sh && \
 
-# Common libraries
-RUN pip3 --no-cache-dir install \
-    numpy scipy sklearn scikit-image pandas matplotlib
+RUN conda install -c \
+    pillow \
+    numpy \
+    pandas \
+    scikit-learn \
+    scikit-image \
+    matplotlib \
+    scipy
 
-#
-# Jupyter Notebook
-#
-RUN pip3 --no-cache-dir install jupyterlab
+RUN conda install -c conda-forge jupyterlab
+
 # Allow access from outside the container, and skip trying to open a browser.
 # NOTE: disable authentication token for convenience. DON'T DO THIS ON A PUBLIC SERVER.
 RUN mkdir /root/.jupyter
@@ -42,33 +47,14 @@ RUN echo "c.NotebookApp.ip = '*'" \
          > /root/.jupyter/jupyter_notebook_config.py
 EXPOSE 8888
 
-#
+
 # Tensorflow - GPU
-#
+
 RUN pip3 install --no-cache-dir --upgrade tensorflow-gpu
 
 # Expose port for TensorBoard
 EXPOSE 6006
 
-#
-# OpenCV 3.2
-#
-# Dependencies
-RUN apt-get install -y --no-install-recommends \
-    libjpeg8-dev libtiff5-dev libjasper-dev libpng12-dev \
-    libavcodec-dev libavformat-dev libswscale-dev libv4l-dev libgtk2.0-dev \
-    liblapacke-dev checkinstall
-# Get source from github
-RUN git clone -b 3.2.0 --depth 1 https://github.com/opencv/opencv.git /usr/local/src/opencv
-# Compile
-RUN cd /usr/local/src/opencv && mkdir build && cd build && \
-    cmake -D CMAKE_INSTALL_PREFIX=/usr/local \
-          -D BUILD_TESTS=OFF \
-          -D BUILD_PERF_TESTS=OFF \
-          -D PYTHON_DEFAULT_EXECUTABLE=$(which python3) \
-          .. && \
-    make -j"$(nproc)" && \
-    make install
 
 
 # Enivronment variables
