@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.0-cudnn6-devel-ubuntu16.04
+FROM nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
 
 RUN apt-get update
 
@@ -43,7 +43,7 @@ RUN echo "c.NotebookApp.ip = '*'" \
 EXPOSE 8888
 
 #
-# Tensorflow 1.0.1 - GPU
+# Tensorflow - GPU
 #
 RUN pip3 install --no-cache-dir --upgrade tensorflow-gpu
 
